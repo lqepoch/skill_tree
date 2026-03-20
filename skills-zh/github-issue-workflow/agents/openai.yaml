@@ -1,0 +1,15 @@
+interface:
+  display_name: "GitHub 问题工作流"
+  short_description: "Issue 优先追踪、标签、模板与进度评论，适用于跨仓库复用"
+  default_prompt: "Use $github-issue-workflow to use issue-first GitHub tracking with templates, labels, and progress comments."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "github"
+      description: "GitHub MCP server"
+      transport: "streamable_http"
+      url: "https://api.githubcopilot.com/mcp/"
+
+policy:
+  allow_implicit_invocation: true

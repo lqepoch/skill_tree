@@ -24,5 +24,5 @@ description: 将 AWS、Azure、Google、GitHub、Cloudflare、OpenAI 和 Anthrop
 - 如果请求有歧义，先确认厂商再搜索。
 - 做跨厂商比较时，分别检索每个厂商的官方来源。
 - 最终回答优先保留准确的页面标题、URL 或 API 名称。
-- 说明来源是否为官方，但是否由 MCP 提供。
+- 说明来源是否为官方，并说明是否由 MCP 提供。
 - 如果没有可用的第一方来源，直接说明。

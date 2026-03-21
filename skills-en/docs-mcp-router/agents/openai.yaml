@@ -1,0 +1,7 @@
+interface:
+  display_name: "Docs MCP Router"
+  short_description: "Route vendor docs questions to the right official source"
+  default_prompt: "Use $docs-mcp-router to look up vendor documentation through the matching official MCP or primary-docs source before answering."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,391 @@
+name: Greptile PR review router
+
+on:
+  # English: react immediately when a PR changes.
+  # 中文：当 PR 新建或更新时，立即进入等待状态。
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+  # English: poll for delayed Greptile output.
+  # 中文：定时轮询，适配 Greptile 延迟几分钟才出结果的情况。
+  schedule:
+    - cron: "*/5 * * * *"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  # English: keep one routing run active per repository.
+  # 中文：同一个仓库只保留一份路由任务，避免重复处理。
+  group: greptile-pr-review-${{ github.event_name == 'pull_request_target' && github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
+env:
+  WAIT_LABEL: awaiting-greptile
+  BLOCKED_LABEL: greptile-blocked
+  APPROVED_LABEL: greptile-approved
+  SOURCE_LABEL: "source: greptile"
+  GREPTILE_AUTHOR_RE: greptile
+  GREPTILE_PENDING_RE: "(👀|analyz|reviewing|queued|pending)"
+  GREPTILE_APPROVED_RE: "(👍|approved|looks good|lgtm|complete|done|no issues|no blocking)"
+  GREPTILE_BLOCKED_RE: "(😕|changes requested|must fix|blocking|problem|issue found|needs fix)"
+
+jobs:
+  # English: mark fresh PRs as waiting for Greptile.
+  # 中文：把新进入流程的 PR 标记为等待 Greptile。
+  mark-pr-waiting:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure labels and mark waiting / 确保标签并标记等待
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pr = context.payload.pull_request;
+
+            const definitions = [
+              { name: process.env.WAIT_LABEL, color: '5319e7', description: 'PR is waiting for Greptile review.' },
+              { name: process.env.BLOCKED_LABEL, color: 'd93f0b', description: 'Greptile found blocking findings.' },
+              { name: process.env.APPROVED_LABEL, color: '0e8a16', description: 'Greptile finished with no blocking findings.' },
+              { name: process.env.SOURCE_LABEL, color: '8250df', description: 'Created from Greptile review findings.' },
+            ];
+
+            async function ensureLabel({ name, color, description }) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                await github.rest.issues.createLabel({ owner, repo, name, color, description });
+              }
+            }
+
+            for (const definition of definitions) {
+              await ensureLabel(definition);
+            }
+
+            // English: clear the previous cycle before waiting again.
+            // 中文：重新等待前，先清理上一次循环的状态标签。
+            for (const label of [process.env.BLOCKED_LABEL, process.env.APPROVED_LABEL]) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: pr.number,
+                  name: label,
+                });
+              } catch (error) {
+                core.debug(`Label ${label} was not present on PR #${pr.number}.`);
+              }
+            }
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: pr.number,
+              labels: [process.env.WAIT_LABEL],
+            });
+
+            core.info(`PR #${pr.number} is waiting for Greptile. / PR #${pr.number} 正在等待 Greptile。`);
+
+  # English: poll open PRs and route the result.
+  # 中文：轮询开放 PR，并根据 Greptile 结果分流。
+  poll-and-route:
+    if: github.event_name != 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poll Greptile and route results / 轮询 Greptile 并分流结果
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const waitLabel = process.env.WAIT_LABEL;
+            const blockedLabel = process.env.BLOCKED_LABEL;
+            const approvedLabel = process.env.APPROVED_LABEL;
+            const sourceLabel = process.env.SOURCE_LABEL;
+
+            const authorRe = new RegExp(process.env.GREPTILE_AUTHOR_RE || 'greptile', 'i');
+            const pendingRe = new RegExp(process.env.GREPTILE_PENDING_RE, 'i');
+            const approvedRe = new RegExp(process.env.GREPTILE_APPROVED_RE, 'i');
+            const blockedRe = new RegExp(process.env.GREPTILE_BLOCKED_RE, 'i');
+
+            const isGreptileAuthor = (login = '', body = '') =>
+              authorRe.test(login) || /@greptileai/i.test(body) || /Greptile/i.test(body);
+
+            const isPendingText = (text = '') => pendingRe.test(text);
+            const isApprovedText = (text = '') => approvedRe.test(text);
+            const isBlockedText = (text = '') => blockedRe.test(text);
+            const isStatusOnly = (text = '') => isPendingText(text) || isApprovedText(text);
+            const markerForPr = (pr) => `<!-- greptile-pr:${pr.number} -->`;
+            const truncate = (text = '', max = 500) =>
+              text.length <= max ? text : `${text.slice(0, max - 1)}…`;
+
+            async function ensureLabel({ name, color, description }) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                await github.rest.issues.createLabel({ owner, repo, name, color, description });
+              }
+            }
+
+            // English: create the labels that the router depends on.
+            // 中文：先确保路由所需的标签存在。
+            for (const definition of [
+              { name: waitLabel, color: '5319e7', description: 'PR is waiting for Greptile review.' },
+              { name: blockedLabel, color: 'd93f0b', description: 'Greptile found blocking findings.' },
+              { name: approvedLabel, color: '0e8a16', description: 'Greptile finished with no blocking findings.' },
+              { name: sourceLabel, color: '8250df', description: 'Created from Greptile review findings.' },
+              { name: 'type: task', color: 'cfd3d7', description: 'Work item or cleanup.' },
+              { name: 'status: needs-triage', color: 'fbca04', description: 'Needs initial sorting.' },
+            ]) {
+              await ensureLabel(definition);
+            }
+
+            const query = `repo:${owner}/${repo} is:pr is:open label:"${waitLabel}"`;
+            const waitingPrs = await github.paginate(
+              github.rest.search.issuesAndPullRequests,
+              { q: query, per_page: 100 },
+              (response) => response.data.items.filter((item) => item.pull_request)
+            );
+
+            if (!waitingPrs.length) {
+              core.info('No PRs are waiting for Greptile. / 没有 PR 在等待 Greptile。');
+              return;
+            }
+
+            for (const item of waitingPrs) {
+              const { data: pr } = await github.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: item.number,
+              });
+
+              if (pr.draft) {
+                core.info(`PR #${pr.number} is still a draft. / PR #${pr.number} 仍然是 draft。`);
+                continue;
+              }
+
+              const reviews = await github.paginate(
+                github.rest.pulls.listReviews,
+                { owner, repo, pull_number: pr.number, per_page: 100 },
+                (response) => response.data
+              );
+
+              const reviewComments = await github.paginate(
+                github.rest.pulls.listReviewComments,
+                { owner, repo, pull_number: pr.number, per_page: 100 },
+                (response) => response.data
+              );
+
+              const issueComments = await github.paginate(
+                github.rest.issues.listComments,
+                { owner, repo, issue_number: pr.number, per_page: 100 },
+                (response) => response.data
+              );
+
+              const signals = [
+                ...reviews.map((review) => ({
+                  kind: 'review',
+                  login: review.user?.login || '',
+                  body: review.body || '',
+                  state: review.state || '',
+                  createdAt: review.submitted_at || review.submittedAt || review.created_at,
+                  url: review.html_url || '',
+                })),
+                ...reviewComments.map((comment) => ({
+                  kind: 'review-comment',
+                  login: comment.user?.login || '',
+                  body: comment.body || '',
+                  state: '',
+                  createdAt: comment.created_at,
+                  url: comment.html_url || '',
+                  path: comment.path || '',
+                  line: comment.line || comment.original_line || null,
+                })),
+                ...issueComments.map((comment) => ({
+                  kind: 'issue-comment',
+                  login: comment.user?.login || '',
+                  body: comment.body || '',
+                  state: '',
+                  createdAt: comment.created_at,
+                  url: comment.html_url || '',
+                })),
+              ]
+                .filter((entry) => isGreptileAuthor(entry.login, entry.body))
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+              if (!signals.length) {
+                core.info(`No Greptile signal yet for PR #${pr.number}. / PR #${pr.number} 还没有 Greptile 信号。`);
+                continue;
+              }
+
+              const latest = signals[0];
+              const latestText = `${latest.state || ''} ${latest.body || ''}`.trim();
+              const hasApprovedReview = reviews.some((review) => review.state === 'APPROVED');
+              const hasChangesRequested = reviews.some((review) => review.state === 'CHANGES_REQUESTED');
+              const approvedSignal = hasApprovedReview || isApprovedText(latestText);
+              const hasBlockingFinding = !approvedSignal && signals.some((entry) => {
+                if (!entry.body) return false;
+                if (entry.kind === 'review' && entry.state === 'APPROVED') return false;
+                if (entry.kind === 'review' && entry.state === 'CHANGES_REQUESTED') return true;
+                return !isStatusOnly(entry.body);
+              });
+
+              if (isPendingText(latestText)) {
+                core.info(`Greptile is still reviewing PR #${pr.number}. / Greptile 仍在审查 PR #${pr.number}。`);
+                continue;
+              }
+
+              const existingOpenIssues = await github.paginate(
+                github.rest.issues.listForRepo,
+                {
+                  owner,
+                  repo,
+                  state: 'open',
+                  labels: sourceLabel,
+                  per_page: 100,
+                },
+                (response) => response.data
+              );
+
+              const linkedIssue = existingOpenIssues.find((issue) =>
+                (issue.body || '').includes(markerForPr(pr)) || (issue.body || '').includes(pr.html_url)
+              );
+
+              if (approvedSignal && !hasChangesRequested && !hasBlockingFinding) {
+                // English: no blocking findings, so approve the PR.
+                // 中文：没有阻塞问题，自动批准 PR。
+                await github.rest.pulls.createReview({
+                  owner,
+                  repo,
+                  pull_number: pr.number,
+                  event: 'APPROVE',
+                  body: 'Greptile finished with no blocking findings. / Greptile 已完成且没有阻塞性问题。',
+                });
+
+                if (linkedIssue) {
+                  await github.rest.issues.createComment({
+                    owner,
+                    repo,
+                    issue_number: linkedIssue.number,
+                    body: `Resolved by PR ${pr.html_url}. / 已由 PR ${pr.html_url} 解决。`,
+                  });
+
+                  await github.rest.issues.update({
+                    owner,
+                    repo,
+                    issue_number: linkedIssue.number,
+                    state: 'closed',
+                    state_reason: 'completed',
+                  });
+                }
+
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: pr.number,
+                  labels: [approvedLabel],
+                });
+
+                for (const label of [waitLabel, blockedLabel]) {
+                  try {
+                    await github.rest.issues.removeLabel({
+                      owner,
+                      repo,
+                      issue_number: pr.number,
+                      name: label,
+                    });
+                  } catch (error) {
+                    core.debug(`Label ${label} was not present on PR #${pr.number}.`);
+                  }
+                }
+
+                core.info(`Approved PR #${pr.number}. / 已批准 PR #${pr.number}。`);
+                continue;
+              }
+
+              // English: block or findings exist, create or update a tracking issue.
+              // 中文：存在阻塞问题或发现项时，创建或更新跟踪 issue。
+              const findingLines = signals
+                .filter((entry) => entry.body && !isStatusOnly(entry.body))
+                .slice(0, 10);
+
+              const issueBody = [
+                markerForPr(pr),
+                `PR: ${pr.html_url}`,
+                `Head SHA: ${pr.head.sha}`,
+                '',
+                'Greptile findings / Greptile 发现：',
+                ...findingLines.map((entry, index) => {
+                  const location = entry.path ? `${entry.path}:${entry.line ?? '?'}` : 'PR summary';
+                  return `${index + 1}. [${location}] ${truncate(entry.body, 500)}`;
+                }),
+                '',
+                'Next step / 下一步：',
+                '- Fix the findings.',
+                '- Push a new commit.',
+                '- Let Greptile review again.',
+              ].join('\n');
+
+              if (linkedIssue) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: linkedIssue.number,
+                  body: `New Greptile findings for PR ${pr.html_url}. / PR ${pr.html_url} 出现了新的 Greptile 发现。`,
+                });
+              } else {
+                const title = `[greptile] Review findings for PR #${pr.number}: ${pr.title}`.slice(0, 240);
+                const createdIssue = await github.rest.issues.create({
+                  owner,
+                  repo,
+                  title,
+                  body: issueBody,
+                });
+
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: createdIssue.data.number,
+                  labels: ['type: task', 'status: needs-triage', sourceLabel],
+                });
+
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: pr.number,
+                  body: `Greptile found blocking feedback. Created issue #${createdIssue.data.number}. / Greptile 发现阻塞问题，已创建 issue #${createdIssue.data.number}。`,
+                });
+              }
+
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: pr.number,
+                labels: [blockedLabel],
+              });
+
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: pr.number,
+                  name: waitLabel,
+                });
+              } catch (error) {
+                core.debug(`Label ${waitLabel} was not present on PR #${pr.number}.`);
+              }
+
+              core.info(`PR #${pr.number} is blocked by Greptile findings. / PR #${pr.number} 被 Greptile 发现阻塞问题。`);
+            }

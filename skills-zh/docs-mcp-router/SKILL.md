@@ -11,7 +11,7 @@ description: 将 AWS、Azure、Google、GitHub、Cloudflare、OpenAI 和 Anthrop
 
 ## 路由规则
 
-- AWS：先用 `mcp__aws_knowledge_mcp__aws___search_documentation`，需要完整上下文时再用 `mcp__aws_knowledge_mcp__aws___read_documentation`。
+- AWS：先用 `mcp__aws_knowledge_mcp__aws__search_documentation`，需要完整上下文时再用 `mcp__aws_knowledge_mcp__aws__read_documentation`。
 - Azure：先用 `mcp__microsoft_docs_mcp__microsoft_docs_search`，再用 `mcp__microsoft_docs_mcp__microsoft_docs_fetch`；需要代码示例时用 `mcp__microsoft_docs_mcp__microsoft_code_sample_search`。
 - Google：先用 `mcp__google_developer_knowledge__search_documents`，再用 `mcp__google_developer_knowledge__get_documents`。
 - GitHub：针对产品文档，使用 `mcp__github__search_code` 在官方 `github/docs` 仓库中检索，再用 `mcp__github__get_file_contents` 读取匹配页面。`issue/PR` 工具只用于仓库工作流问题。

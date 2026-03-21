@@ -66,15 +66,12 @@ class Status:
     EN: Represents operation status.
     CN: 代表操作状态。
     """
-    code:
-        # EN: Status code.
-        # CN: 状态码。
-        int
-    message:
-        # EN: Status message.
-        # CN: 状态消息。
-        str
-```
+    # EN: Status code.
+    # CN: 状态码。
+    code: int
+    # EN: Status message.
+    # CN: 状态消息。
+    message: str
 
 ---
 

@@ -11,7 +11,7 @@ Use this skill when the user asks about official documentation, API behavior, SD
 
 ## Routing
 
-- AWS: use `mcp__aws_knowledge_mcp__aws___search_documentation`, then `mcp__aws_knowledge_mcp__aws___read_documentation` when full context is needed.
+- AWS: use `mcp__aws_knowledge_mcp__aws__search_documentation`, then `mcp__aws_knowledge_mcp__aws__read_documentation` when full context is needed.
 - Azure: use `mcp__microsoft_docs_mcp__microsoft_docs_search`, then `mcp__microsoft_docs_mcp__microsoft_docs_fetch`; use `mcp__microsoft_docs_mcp__microsoft_code_sample_search` for code examples.
 - Google: use `mcp__google_developer_knowledge__search_documents`, then `mcp__google_developer_knowledge__get_documents`.
 - GitHub: use `mcp__github__search_code` against the official `github/docs` repository for product docs, and `mcp__github__get_file_contents` to read the matched page. Use issue/PR tools only for repo workflow questions.

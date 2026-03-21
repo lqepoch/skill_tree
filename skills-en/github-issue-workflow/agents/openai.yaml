@@ -1,7 +1,7 @@
 interface:
   display_name: "GitHub Issue Workflow"
-  short_description: "Issue-first tracking, labels, templates, and progress comments"
-  default_prompt: "Use $github-issue-workflow to track GitHub work with issue-first triage, templates, labels, and progress comments."
+  short_description: "Issue-first tracking with root-cause, files, fix, validation, and rollback discipline"
+  default_prompt: "Use $github-issue-workflow to track GitHub work with issue-first triage, root-cause analysis, related files, fix options, validation, labels, and progress comments."
 
 dependencies:
   tools:

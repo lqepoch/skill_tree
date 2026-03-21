@@ -1,7 +1,7 @@
 interface:
-  display_name: "GitHub 问题工作流"
-  short_description: "Issue 优先追踪、标签、模板与进度评论，适用于跨仓库复用"
-  default_prompt: "Use $github-issue-workflow to use issue-first GitHub tracking with templates, labels, and progress comments."
+  display_name: "GitHub Issue 工作流"
+  short_description: "以根因、文件、修复、验证和回滚为重点的 issue 优先跟踪"
+  default_prompt: "Use $github-issue-workflow to track GitHub work with issue-first triage, root-cause analysis, related files, fix options, validation, labels, and progress comments."
 
 dependencies:
   tools:

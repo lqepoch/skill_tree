@@ -1,18 +1,18 @@
 ---
 name: github-issue-workflow
-description: "Enterprise GitHub issue-first workflow for Codex. Use when tracking work in GitHub, triaging bugs/features/tasks before code changes, documenting suspected root cause, related files, fix options, validation, and rollback, maintaining issue templates or reusable labels, or syncing progress comments and PR linkage back to issues."
+description: "Issue-first GitHub workflow for Codex. Use it to create or update issues before code changes, capture root cause, related files, fix options, validation, rollback notes, maintain reusable issue templates and labels, and keep progress comments and PR closure links in sync."
 ---
 
 # GitHub Issue Workflow
 
 ## Purpose
 
-Use this skill to keep GitHub issues as the system of record for engineering work. The issue should explain the problem, the suspected source, the files or modules likely involved, the recommended fix, the validation standard, and any rollback or mitigation plan.
+Use this skill to keep GitHub issues as the source of truth for engineering work. An issue should explain the problem, the suspected source, the files or modules involved, the recommended fix, the validation standard, and any rollback or mitigation plan.
 
 ## Operating Principles
 
 - Treat the issue as the authoritative work item.
-- Do not make code changes before the work is represented in an issue, unless the user explicitly asks for an exploratory investigation only.
+- Do not make code changes before the work is represented in an issue unless the user explicitly asks for exploratory analysis only.
 - Write issues so another engineer can continue the work without hidden context.
 - Separate facts, hypotheses, and proposed fixes.
 - Prefer reusable labels and templates over project-specific ad hoc wording.
@@ -27,7 +27,7 @@ Every issue should capture:
 - Expected behavior
 - Actual behavior or failure mode
 - Impact and severity
-- Suspected root cause or source of the failure
+- Suspected root cause or failure source
 - Related files, modules, services, configs, or migrations
 - Proposed fix options and recommendation
 - Verification plan
@@ -43,10 +43,10 @@ For bugs, always include the evidence trail. For features, include the business 
    - If key details are missing, open a triage issue and mark it `status: needs-info`.
    - Use the issue body or follow-up comments to record unknowns instead of guessing.
 2. Open or update the issue.
-   - Use GitHub MCP `issue_write` to create or update the issue.
+   - Use GitHub issue templates.
    - Prefer a title in the form `[type] short summary`.
-   - Use the matching template from `assets/github-issue-templates/`.
-   - If the template is too small for the problem, add the missing detail in the body rather than compressing the problem statement.
+   - Use the matching template from `references/issue-templates/`.
+   - If the template is too small for the problem, expand the body with concrete examples, evidence, and assumptions rather than compressing the problem statement.
    - For bug issues, explicitly list:
      - suspected root cause
      - related files or modules
@@ -69,24 +69,25 @@ For bugs, always include the evidence trail. For features, include the business 
    - Add `area:*` when the affected subsystem is clear.
    - Keep the label set small, stable, and reusable across repositories.
    - Do not invent a large project-specific taxonomy unless the repo already uses one.
-4. Report progress.
+4. Record progress.
    - Add a short comment at each meaningful checkpoint: triage complete, plan confirmed, implementation started, validation complete, ready to close.
+   - Do not wait until the end; progress comments should be posted as soon as the checkpoint is reached.
    - Each update should answer:
      - what changed
      - what remains
      - whether there is a blocker
-   - If the issue is blocked, state the blocker plainly and mark the issue accordingly.
+   - If the issue is blocked, state the blocker plainly and update the issue status accordingly.
 5. Link the fix.
    - When a PR is ready, include `Closes #123` or `Fixes owner/repo#123` in the PR body.
-   - Prefer automatic closure through PR linkage instead of manual issue closure.
-   - If the fix spans multiple issues, reference each one explicitly.
+   - Every PR that is expected to close work must explicitly include the relevant issue references so GitHub can auto-close them.
+   - If the fix spans multiple issues, reference each one explicitly and keep the links unambiguous.
 6. Finish.
    - Add a final summary comment with the shipped outcome, validation result, and any follow-up work.
    - Close the issue only after verification is complete and the resolution is durable.
 
 ## Comment Format
 
-Use a consistent update format so progress is easy to scan:
+Use a consistent progress update format so comments are easy to scan:
 
 - `Checkpoint`: triage, plan, implementation, validation, done
 - `Change`: what was completed
@@ -94,7 +95,13 @@ Use a consistent update format so progress is easy to scan:
 - `Blocker`: only when something is preventing progress
 - `Evidence`: logs, screenshots, links, test results, or reproduction notes
 
-Keep the comment factual and short. If the root cause is still being investigated, say so explicitly and list the current hypotheses.
+Recommended update points:
+
+- triage complete
+- plan confirmed
+- implementation started
+- validation complete
+- ready to close
 
 ## Label Set
 
@@ -122,9 +129,9 @@ Use a small reusable core set first.
 
 ## Template Guidance
 
-Prefer Markdown issue templates in `.github/ISSUE_TEMPLATE/` for broad compatibility.
+Prefer Markdown issue templates in `references/issue-templates/` for broad compatibility.
 
-Use a small, stable set:
+Keep a small, stable set:
 
 - `01-bug-report.md`
 - `02-feature-request.md`
@@ -169,9 +176,9 @@ For tasks, the template should ask for:
 - follow-up or rollback notes
 - acceptance criteria
 
-Use `config.yml` only to keep the issue chooser simple and avoid clutter.
+`config.yml` should only keep the issue chooser simple and uncluttered.
 
 ## Resources
 
 - `references/issue-guide.md`
-- `assets/github-issue-templates/`
+- `references/issue-templates/`

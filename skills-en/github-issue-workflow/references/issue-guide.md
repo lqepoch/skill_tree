@@ -1,89 +1,108 @@
 # Issue Guide
 
-Use this skill when the repository should follow an issue-first workflow.
+When a repository follows an issue-first workflow, the issue should be the single source of truth before implementation starts.
 
-## Issue Anatomy
+## When to Create an Issue First
 
-Every well-formed issue should explain:
+- The user explicitly wants analysis before fixing
+- The work will involve code, config, migration, regression, or release steps
+- The task needs coordination, follow-up, or traceability
+- Root cause, validation, or rollback details need to be recorded
 
-- What is broken, missing, or being requested
+## Standard Flow
+
+1. Triage
+   - Confirm the problem, impact, environment, scope, and acceptance criteria
+   - If details are missing, open a triage issue and mark it `status: needs-info`
+   - Do not replace facts with guesses
+2. Create or update the issue
+   - Prefer the issue template
+   - Use a title like `[type] short summary`
+   - Use the matching bug / feature / task template
+3. Apply labels
+   - Apply at least one `type:*`
+   - Apply at least one `status:*`
+   - Add `priority:*` and `area:*` when needed
+4. Record progress in real time
+   - Leave a progress comment at each meaningful checkpoint
+   - Do not wait until the end to backfill status
+   - If blocked, state the blocker immediately
+5. Link the PR
+   - The PR body must include references that will auto-close the issue
+   - If the PR resolves multiple issues, list each one explicitly
+6. Close out
+   - Leave a final summary comment after verification
+   - Close the issue only after the fix is verified and stable
+
+## Required Content
+
+Every issue should clearly state:
+
+- What the problem, request, or task is
 - Where it happens
 - How to reproduce or prove it
-- What the expected outcome is
+- What the expected result is
 - Why it matters
-- What files, modules, services, configs, or migrations are likely involved
-- What the recommended fix or next step is
-- How success will be validated
+- Which files, modules, services, or configs are involved
+- The recommended next step or fix
+- How success will be verified
 - Whether rollback or mitigation is needed
 
-If the root cause is not confirmed, label it as a hypothesis and include the evidence that supports it.
+## Extra Requirements for Bugs
 
-## Bug Standard
+Bug issues should include:
 
-Bug issues should document:
+- Observed behavior
+- Expected behavior
+- Reproduction steps
+- Evidence: logs, screenshots, traces, links, or test results
+- Root cause hypothesis
+- Candidate fix path
+- Verification plan
 
-- observed behavior
-- expected behavior
-- environment details
-- reproduction steps
-- logs, traces, screenshots, or links
-- suspected source of failure
-- related files and why they are implicated
-- candidate fixes and why one is preferred
-- verification and rollback plan
+### Example
 
-If multiple failure sources are possible, list them in priority order and explain how each was ruled in or out.
+```text
+Checkpoint: triage
+Change: narrowed the issue to the payment confirmation path
+Remaining: need to confirm whether retries are the trigger
+Blocker: none
+Evidence: request_id=...
+```
 
-## Feature Standard
+## Extra Requirements for Features
 
-Feature issues should document:
+Feature issues should include:
 
-- business goal or user need
-- why the current behavior is insufficient
-- scope and non-goals
-- constraints and dependencies
-- impacted files or systems
-- rollout, migration, or compatibility concerns
-- alternatives considered
-- acceptance criteria
+- Business goal
+- Non-goals
+- Constraints and dependencies
+- Impacted areas
+- Release or migration notes
+- Acceptance criteria
 
-## Task Standard
+## Extra Requirements for Tasks
 
-Task issues should document:
+Task issues should include:
 
-- the concrete deliverable
-- the reason the task exists
-- scope boundaries
-- likely files or systems to touch
-- implementation plan
-- validation steps
-- follow-up or cleanup items
+- Deliverable
+- Scope boundaries
+- Likely files or systems
+- Execution plan
+- Verification steps
+- Follow-up or rollback notes
 
-## Template Rules
+## Progress Comment Format
 
-- Prefer Markdown issue templates for broad compatibility.
-- Keep fields stable across repositories.
-- Use a small template set:
-  - `01-bug-report.md`
-  - `02-feature-request.md`
-  - `03-task.md`
-- Include a simple `config.yml` so the issue chooser stays clean.
+Use a consistent structure so updates are easy to scan:
 
-## Label Rules
+- `Checkpoint`
+- `Change`
+- `Remaining`
+- `Blocker`
+- `Evidence`
 
-- Keep the core taxonomy small.
-- Use the same label names across repositories when possible.
-- Prefer these families:
-  - `type:*`
-  - `status:*`
-  - `priority:*`
-  - `area:*`
-- Keep label colors readable and distinct.
-- Use 6-digit hex colors only.
-
-## Comment Cadence
-
-Post a progress comment when the work moves between clear stages:
+Recommended update points:
 
 - triage complete
 - plan confirmed
@@ -91,16 +110,55 @@ Post a progress comment when the work moves between clear stages:
 - validation complete
 - ready to close
 
-Each comment should answer:
+## PR Linkage Rules
 
-- what changed
-- what remains
-- whether anything is blocked
+If a PR resolves one or more issues, the PR body must include closing references such as:
 
-If the root cause is still under investigation, mention the current leading hypotheses and the next check you plan to run.
+- `Closes #123`
+- `Fixes #123`
+- `Closes owner/repo#123`
 
-## PR Linkage
+If the PR closes multiple issues, list each issue separately. Do not use one vague reference for several unrelated issues.
 
-When the change is ready, put `Closes #<issue>` or `Fixes owner/repo#<issue>` in the pull request body.
-Use that linkage instead of manual closure when possible.
-If a change closes multiple issues, list every issue explicitly.
+### Example
+
+```text
+Closes #123
+Closes #124
+Closes #125
+```
+
+## Template Location
+
+Put the reference templates in `references/issue-templates/`, not in `assets/`.
+
+Why:
+
+- `references/` is the right place for readable, reusable guidance and sample content
+- `assets/` is better for images, binaries, or supporting material that is not meant to be read directly
+- Templates are effectively copyable instruction sets, so they fit `references/` better
+
+## Suggested Labels
+
+- `type: bug`
+- `type: feature`
+- `type: task`
+- `type: docs`
+- `status: needs-triage`
+- `status: needs-info`
+- `status: in-progress`
+- `status: blocked`
+- `priority: high`
+- `priority: medium`
+- `priority: low`
+- `area:*`
+
+## Final Check
+
+Before closing an issue, confirm:
+
+- Facts and hypotheses are clearly separated
+- Key evidence has been recorded
+- The fix and verification are complete
+- The PR is correctly linked to the issue
+- No follow-up items were missed

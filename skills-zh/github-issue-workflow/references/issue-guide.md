@@ -130,7 +130,7 @@ Closes #125
 
 ## 模板位置
 
-参考模板放在 `references/issue-templates/`，而不是 `assets/`。
+参考模板放在 `references/`，而不是 `assets/`。
 
 这样做的原因是：
 

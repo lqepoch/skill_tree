@@ -45,7 +45,7 @@ description: "面向 Codex 的 GitHub issue 优先工作流。用于在写代码
 2. 创建或更新 issue。
    - 使用 GitHub issue 模板。
    - 标题优先使用 `[type] 简短摘要`。
-   - 使用 `references/issue-templates/` 中对应的模板。
+- 使用 `references/` 中对应的模板。
    - 如果模板不够装下问题，就在正文里补充具体例子、证据和假设，不要压缩问题本身。
    - 对于 bug issue，显式列出：
      - 推测根因
@@ -129,7 +129,7 @@ description: "面向 Codex 的 GitHub issue 优先工作流。用于在写代码
 
 ## 模板指引
 
-优先使用 `references/issue-templates/` 下的 Markdown issue 参考模板，保证兼容性和可复用性。
+优先使用 `references/` 下的 Markdown issue 参考模板，保证兼容性和可复用性。
 
 保留一组小而稳定的模板：
 
@@ -181,4 +181,4 @@ description: "面向 Codex 的 GitHub issue 优先工作流。用于在写代码
 ## 资源
 
 - `references/issue-guide.md`
-- `references/issue-templates/`
+- `references/`

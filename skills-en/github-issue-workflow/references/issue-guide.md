@@ -130,7 +130,7 @@ Closes #125
 
 ## Template Location
 
-Put the reference templates in `references/issue-templates/`, not in `assets/`.
+Put the reference templates in `references/`, not in `assets/`.
 
 Why:
 

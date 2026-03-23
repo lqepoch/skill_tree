@@ -45,7 +45,7 @@ For bugs, always include the evidence trail. For features, include the business 
 2. Open or update the issue.
    - Use GitHub issue templates.
    - Prefer a title in the form `[type] short summary`.
-   - Use the matching template from `references/issue-templates/`.
+- Use the matching template from `references/`.
    - If the template is too small for the problem, expand the body with concrete examples, evidence, and assumptions rather than compressing the problem statement.
    - For bug issues, explicitly list:
      - suspected root cause
@@ -129,7 +129,7 @@ Use a small reusable core set first.
 
 ## Template Guidance
 
-Prefer Markdown issue templates in `references/issue-templates/` for broad compatibility.
+Prefer Markdown issue templates in `references/` for broad compatibility.
 
 Keep a small, stable set:
 
@@ -181,4 +181,4 @@ For tasks, the template should ask for:
 ## Resources
 
 - `references/issue-guide.md`
-- `references/issue-templates/`
+- `references/`
